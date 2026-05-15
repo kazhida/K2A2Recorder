@@ -8,6 +8,7 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.response.ReadRecordsResponse
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Pressure
 import com.abplus.k2a2recorder.model.BloodPressure
@@ -41,6 +42,14 @@ class HealthConnectManager @Inject constructor(
             .containsAll(BLOOD_PRESSURE_PERMISSIONS)
     }
 
+    suspend fun hasReadBloodPressurePermission(): Boolean {
+        if (!isAvailable) return false
+
+        return client.permissionController
+            .getGrantedPermissions()
+            .contains(READ_BLOOD_PRESSURE_PERMISSION)
+    }
+
     suspend fun writeBloodPressure(bloodPressure: BloodPressure) {
         client.insertRecords(listOf(bloodPressure.toHealthConnectRecord()))
     }
@@ -54,6 +63,30 @@ class HealthConnectManager @Inject constructor(
         )
 
         return response.records.map { it.toBloodPressure() }
+    }
+
+    suspend fun readLatestBloodPressures(limit: Int = 50): List<BloodPressure> {
+        return readLatestBloodPressuresPage(limit = limit).bloodPressures
+    }
+
+    suspend fun readLatestBloodPressuresPage(
+        limit: Int = 50,
+        pageToken: String? = null
+    ): BloodPressurePage {
+        val response: ReadRecordsResponse<BloodPressureRecord> = client.readRecords(
+            ReadRecordsRequest(
+                recordType = BloodPressureRecord::class,
+                timeRangeFilter = TimeRangeFilter.before(Instant.now()),
+                ascendingOrder = false,
+                pageSize = limit,
+                pageToken = pageToken
+            )
+        )
+
+        return BloodPressurePage(
+            bloodPressures = response.records.map { it.toBloodPressure() },
+            nextPageToken = response.pageToken
+        )
     }
 
     private fun BloodPressure.toHealthConnectRecord(): BloodPressureRecord {
@@ -77,9 +110,21 @@ class HealthConnectManager @Inject constructor(
         )
 
     companion object {
+        val READ_BLOOD_PRESSURE_PERMISSION: String =
+            HealthPermission.getReadPermission(BloodPressureRecord::class)
+
+        val READ_BLOOD_PRESSURE_PERMISSIONS: Set<String> = setOf(
+            READ_BLOOD_PRESSURE_PERMISSION
+        )
+
         val BLOOD_PRESSURE_PERMISSIONS: Set<String> = setOf(
-            HealthPermission.getReadPermission(BloodPressureRecord::class),
+            READ_BLOOD_PRESSURE_PERMISSION,
             HealthPermission.getWritePermission(BloodPressureRecord::class)
         )
     }
 }
+
+data class BloodPressurePage(
+    val bloodPressures: List<BloodPressure>,
+    val nextPageToken: String?
+)

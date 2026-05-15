@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -17,25 +17,45 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.abplus.k2a2recorder.model.BloodPressure
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun BloodPressureListBox(
     bloodPressures: List<BloodPressure>,
     modifier: Modifier = Modifier,
-    onBloodPressureClick: (BloodPressure) -> Unit = {}
+    isLoadingMore: Boolean = false,
+    onBloodPressureClick: (BloodPressure) -> Unit = {},
+    onLoadMore: () -> Unit = {}
 ) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState, bloodPressures.size) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .map { lastVisibleIndex ->
+                val lastDataIndex = bloodPressures.lastIndex
+                lastVisibleIndex != null && lastDataIndex >= 0 && lastVisibleIndex >= lastDataIndex - 8
+            }
+            .distinctUntilChanged()
+            .collect { shouldLoadMore ->
+                if (shouldLoadMore) {
+                    onLoadMore()
+                }
+            }
+    }
+
     Surface(
         modifier = modifier
-            .fillMaxWidth()
-            .heightIn(max = 360.dp),
+            .fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         color = MaterialTheme.colorScheme.surface
     ) {
         if (bloodPressures.isEmpty()) {
@@ -47,6 +67,7 @@ fun BloodPressureListBox(
             )
         } else {
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -62,8 +83,23 @@ fun BloodPressureListBox(
                         onClick = { onBloodPressureClick(bloodPressure) }
                     )
                 }
+
+                if (isLoadingMore) {
+                    item {
+                        Text(
+                            text = "Loading more blood pressure records...",
+                            modifier = Modifier.padding(8.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
+        BloodPressureInputPanel(
+            systolic = 150,
+            diastolic = 100
+        )
     }
 }
 
@@ -86,7 +122,7 @@ fun BloodPressureItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 0.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
