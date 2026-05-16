@@ -54,6 +54,18 @@ class HealthConnectManager @Inject constructor(
         client.insertRecords(listOf(bloodPressure.toHealthConnectRecord()))
     }
 
+    suspend fun updateBloodPressure(bloodPressure: BloodPressure) {
+        client.updateRecords(listOf(bloodPressure.toHealthConnectRecord()))
+    }
+
+    suspend fun deleteBloodPressure(bloodPressure: BloodPressure) {
+        client.deleteRecords(
+            recordType = BloodPressureRecord::class,
+            recordIdsList = listOf(bloodPressure.id),
+            clientRecordIdsList = emptyList()
+        )
+    }
+
     suspend fun readBloodPressures(startTime: Instant, endTime: Instant): List<BloodPressure> {
         val response = client.readRecords(
             ReadRecordsRequest(
@@ -63,10 +75,6 @@ class HealthConnectManager @Inject constructor(
         )
 
         return response.records.map { it.toBloodPressure() }
-    }
-
-    suspend fun readLatestBloodPressures(limit: Int = 50): List<BloodPressure> {
-        return readLatestBloodPressuresPage(limit = limit).bloodPressures
     }
 
     suspend fun readLatestBloodPressuresPage(
@@ -96,7 +104,11 @@ class HealthConnectManager @Inject constructor(
         return BloodPressureRecord(
             time = instant,
             zoneOffset = zoneOffset,
-            metadata = Metadata.manualEntry(),
+            metadata = if (id.isBlank()) {
+                Metadata.manualEntry()
+            } else {
+                Metadata.manualEntryWithId(id)
+            },
             systolic = Pressure.millimetersOfMercury(systolic.toDouble()),
             diastolic = Pressure.millimetersOfMercury(diastolic.toDouble())
         )
@@ -107,7 +119,8 @@ class HealthConnectManager @Inject constructor(
             dateTime = time.toEpochMilli(),
             systolic = systolic.inMillimetersOfMercury.toInt(),
             diastolic = diastolic.inMillimetersOfMercury.toInt(),
-            id = metadata.id
+            id = metadata.id,
+            dataOriginPackageName = metadata.dataOrigin.packageName
         )
 
     companion object {

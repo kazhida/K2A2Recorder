@@ -11,12 +11,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,25 +38,28 @@ import kotlinx.coroutines.flow.map
 
 enum class BloodPressureInputMode {
     NORMAL,
-    ADD
+    ADD,
+    EDIT
 }
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun BloodPressureListBox(
+fun BloodPressureList(
     bloodPressures: List<BloodPressure>,
+    ownPackageName: String,
     modifier: Modifier = Modifier,
     inputMode: BloodPressureInputMode = BloodPressureInputMode.NORMAL,
-    inputSystolic: Int = 150,
-    inputDiastolic: Int = 100,
+    inputSystolic: Int? = 150,
+    inputDiastolic: Int? = 100,
     isRefreshing: Boolean = false,
     isLoadingMore: Boolean = false,
     onRefresh: () -> Unit = {},
-    onInputSystolicChange: (Int) -> Unit = {},
-    onInputDiastolicChange: (Int) -> Unit = {},
+    onInputSystolicChange: (Int?) -> Unit = {},
+    onInputDiastolicChange: (Int?) -> Unit = {},
     onInputMicClick: () -> Unit = {},
     onInputCancelClick: () -> Unit = {},
     onInputSaveClick: () -> Unit = {},
+    onEditClick: (BloodPressure) -> Unit = {},
     onLoadMore: () -> Unit = {}
 ) {
     val listState = rememberLazyListState()
@@ -107,7 +114,10 @@ fun BloodPressureListBox(
                         }
                     ) { _, bloodPressure ->
                         BloodPressureItem(
-                            bloodPressure = bloodPressure
+                            bloodPressure = bloodPressure,
+                            isOwnRecord = bloodPressure.dataOriginPackageName == ownPackageName,
+                            isEditEnabled = inputMode == BloodPressureInputMode.NORMAL,
+                            onEditClick = { onEditClick(bloodPressure) }
                         )
                     }
 
@@ -129,7 +139,7 @@ fun BloodPressureListBox(
                 modifier = Modifier.align(Alignment.TopCenter)
             )
         }
-        if (inputMode != BloodPressureInputMode.NORMAL) {
+        if (inputMode == BloodPressureInputMode.ADD || inputMode == BloodPressureInputMode.EDIT) {
             BloodPressureInputPanel(
                 systolic = inputSystolic,
                 diastolic = inputDiastolic,
@@ -147,7 +157,10 @@ fun BloodPressureListBox(
 @Composable
 fun BloodPressureItem(
     bloodPressure: BloodPressure,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isOwnRecord: Boolean = false,
+    isEditEnabled: Boolean = true,
+    onEditClick: () -> Unit = {}
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -179,60 +192,58 @@ fun BloodPressureItem(
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                BloodPressureValue(
-                    label = "SYS",
-                    value = bloodPressure.systolic
+                if (isOwnRecord) {
+                    IconButton(
+                        onClick = onEditClick,
+                        enabled = isEditEnabled
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "編集",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Text(
+                    text = bloodPressure.systolic.toString(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "/",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                BloodPressureValue(
-                    label = "DIA",
-                    value = bloodPressure.diastolic
+                Text(
+                    text = bloodPressure.diastolic.toString(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "mmHg",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
 }
 
-@Composable
-private fun BloodPressureValue(
-    label: String,
-    value: Int,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.End
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
-private fun BloodPressureListBoxPreview() {
+private fun BloodPressureListPreview() {
     MaterialTheme {
-        BloodPressureListBox(
+        BloodPressureList(
             bloodPressures = listOf(
                 BloodPressure.newInstance(1_717_200_000_000, 128, 82),
                 BloodPressure.newInstance(1_717_286_400_000, 121, 78),
                 BloodPressure.newInstance(1_717_372_800_000, 134, 86)
             ),
+            ownPackageName = "com.abplus.k2a2recorder",
             modifier = Modifier.padding(16.dp)
         )
     }

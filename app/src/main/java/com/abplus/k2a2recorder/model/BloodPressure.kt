@@ -8,7 +8,8 @@ data class BloodPressure(
     val id: String,
     val timeInMillis: Long,
     val systolic: Int,
-    val diastolic: Int
+    val diastolic: Int,
+    val dataOriginPackageName: String
 ) {
 
     companion object {
@@ -17,8 +18,9 @@ data class BloodPressure(
             dateTime: Long,
             systolic: Int,
             diastolic: Int,
-            id: String = ""
-        ): BloodPressure = BloodPressure(id, dateTime, systolic, diastolic)
+            id: String = "",
+            dataOriginPackageName: String = ""
+        ): BloodPressure = BloodPressure(id, dateTime, systolic, diastolic, dataOriginPackageName)
     }
 
     private val dateFormatter = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
@@ -30,11 +32,4 @@ data class BloodPressure(
 
     val date: String get() = dateFormatter.format(calendar.time)
     val time: String get() = timeFormatter.format(calendar.time)
-
-    interface Repository {
-        fun add(bp: BloodPressure)
-        fun save(bp: BloodPressure)
-        fun delete(bp: BloodPressure)
-        fun load(): List<BloodPressure>
-    }
 }

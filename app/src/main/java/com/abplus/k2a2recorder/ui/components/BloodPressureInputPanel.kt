@@ -40,18 +40,24 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun BloodPressureInputPanel(
-    systolic: Int,
-    diastolic: Int,
+    systolic: Int?,
+    diastolic: Int?,
     inputMode: BloodPressureInputMode,
     modifier: Modifier = Modifier,
     systolicRange: IntRange = 70..250,
     diastolicRange: IntRange = 40..150,
-    onSystolicChange: (Int) -> Unit = {},
-    onDiastolicChange: (Int) -> Unit = {},
+    onSystolicChange: (Int?) -> Unit = {},
+    onDiastolicChange: (Int?) -> Unit = {},
     onMicClick: () -> Unit = {},
     onCancelClick: () -> Unit = {},
     onSaveClick: () -> Unit = {}
 ) {
+    val saveButtonText = when (inputMode) {
+        BloodPressureInputMode.EDIT -> "更新"
+        BloodPressureInputMode.ADD,
+        BloodPressureInputMode.NORMAL -> "保存"
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth(),
@@ -119,7 +125,7 @@ fun BloodPressureInputPanel(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = onSaveClick) {
-                        Text(text = "保存")
+                        Text(text = saveButtonText)
                     }
                 }
             }
@@ -145,16 +151,16 @@ fun BloodPressureInputPanel(
 @Composable
 private fun BloodPressureTextField(
     label: String,
-    value: Int,
+    value: Int?,
     valueRange: IntRange,
     modifier: Modifier = Modifier,
-    onValueChange: (Int) -> Unit = {}
+    onValueChange: (Int?) -> Unit = {}
 ) {
-    var text by rememberSaveable(label) { mutableStateOf(value.toString()) }
+    var text by rememberSaveable(label) { mutableStateOf(value?.toString().orEmpty()) }
 
     LaunchedEffect(value) {
         if (text.toIntOrNull() != value) {
-            text = value.toString()
+            text = value?.toString().orEmpty()
         }
     }
 
@@ -164,15 +170,17 @@ private fun BloodPressureTextField(
     OutlinedTextField(
         value = text,
         onValueChange = { nextText ->
-            val filteredText = nextText
-                .filter { it.isDigit() }
-                .take(valueRange.last.toString().length)
-            text = filteredText
+                val filteredText = nextText
+                    .filter { it.isDigit() }
+                    .take(valueRange.last.toString().length)
+                text = filteredText
 
-            val nextValue = filteredText.toIntOrNull()
-            if (nextValue != null && nextValue in valueRange) {
-                onValueChange(nextValue)
-            }
+                val nextValue = filteredText.toIntOrNull()
+                if (filteredText.isEmpty()) {
+                    onValueChange(null)
+                } else if (nextValue != null && nextValue in valueRange) {
+                    onValueChange(nextValue)
+                }
         },
         label = { Text(text = label) },
         modifier = modifier.width(120.dp),

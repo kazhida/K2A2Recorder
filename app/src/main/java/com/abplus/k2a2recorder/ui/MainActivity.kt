@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
                     onInputMicClick = ::startSpeechRecognition,
                     onInputCancelClick = viewModel::hideInput,
                     onInputSaveClick = viewModel::saveInputBloodPressure,
+                    onEditClick = viewModel::onEditClick,
                     onAddClick = viewModel::onAddClick
                 )
             }

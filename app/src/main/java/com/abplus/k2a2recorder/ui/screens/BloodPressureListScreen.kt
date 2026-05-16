@@ -14,13 +14,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.abplus.k2a2recorder.model.BloodPressure
 import com.abplus.k2a2recorder.ui.components.BloodPressureInputMode
-import com.abplus.k2a2recorder.ui.components.BloodPressureListBox
+import com.abplus.k2a2recorder.ui.components.BloodPressureList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,18 +31,23 @@ fun BloodPressureListScreen(
     modifier: Modifier = Modifier,
     onRefresh: () -> Unit = {},
     onLoadMore: () -> Unit = {},
-    onInputSystolicChange: (Int) -> Unit = {},
-    onInputDiastolicChange: (Int) -> Unit = {},
+    onInputSystolicChange: (Int?) -> Unit = {},
+    onInputDiastolicChange: (Int?) -> Unit = {},
     onInputMicClick: () -> Unit = {},
     onInputCancelClick: () -> Unit = {},
     onInputSaveClick: () -> Unit = {},
+    onEditClick: (BloodPressure) -> Unit = {},
     onAddClick: () -> Unit = {}
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Blood Pressure") }
+                title = { Text(text = "血圧記録") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    titleContentColor = MaterialTheme.colorScheme.onError
+                )
             )
         },
         floatingActionButton = {
@@ -61,7 +68,8 @@ fun BloodPressureListScreen(
             onInputDiastolicChange = onInputDiastolicChange,
             onInputMicClick = onInputMicClick,
             onInputCancelClick = onInputCancelClick,
-            onInputSaveClick = onInputSaveClick
+            onInputSaveClick = onInputSaveClick,
+            onEditClick = onEditClick
         )
     }
 }
@@ -72,18 +80,20 @@ private fun BloodPressureListScreenBody(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     onRefresh: () -> Unit = {},
-    onInputSystolicChange: (Int) -> Unit = {},
-    onInputDiastolicChange: (Int) -> Unit = {},
+    onInputSystolicChange: (Int?) -> Unit = {},
+    onInputDiastolicChange: (Int?) -> Unit = {},
     onInputMicClick: () -> Unit = {},
     onInputCancelClick: () -> Unit = {},
     onInputSaveClick: () -> Unit = {},
+    onEditClick: (BloodPressure) -> Unit = {},
     onLoadMore: () -> Unit = {}
 ) {
+    val packageName = LocalContext.current.packageName
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding)
-            .padding(16.dp),
+            .padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         uiState.message?.let { message ->
@@ -94,16 +104,9 @@ private fun BloodPressureListScreenBody(
             )
         }
 
-//        if (uiState.isLoading) {
-//            Text(
-//                text = "Loading blood pressure records...",
-//                style = MaterialTheme.typography.bodyMedium,
-//                color = MaterialTheme.colorScheme.onSurfaceVariant
-//            )
-//        }
-
-        BloodPressureListBox(
+        BloodPressureList(
             bloodPressures = uiState.bloodPressures,
+            ownPackageName = packageName,
             inputMode = uiState.inputMode,
             inputSystolic = uiState.inputSystolic,
             inputDiastolic = uiState.inputDiastolic,
@@ -116,6 +119,7 @@ private fun BloodPressureListScreenBody(
             onInputMicClick = onInputMicClick,
             onInputCancelClick = onInputCancelClick,
             onInputSaveClick = onInputSaveClick,
+            onEditClick = onEditClick,
             onLoadMore = onLoadMore
         )
     }

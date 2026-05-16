@@ -122,24 +122,41 @@ class BloodPressureListViewModel @Inject constructor(
     fun onAddClick() {
         _uiState.update {
             it.copy(
-                inputMode = BloodPressureInputMode.ADD
+                inputMode = BloodPressureInputMode.ADD,
+                editingBloodPressure = null
             )
+        }
+    }
+
+    fun onEditClick(bloodPressure: BloodPressure) {
+        _uiState.update { state ->
+            if (state.inputMode != BloodPressureInputMode.NORMAL) {
+                state
+            } else {
+                state.copy(
+                    inputMode = BloodPressureInputMode.EDIT,
+                    inputSystolic = bloodPressure.systolic,
+                    inputDiastolic = bloodPressure.diastolic,
+                    editingBloodPressure = bloodPressure
+                )
+            }
         }
     }
 
     fun hideInput() {
         _uiState.update {
             it.copy(
-                inputMode = BloodPressureInputMode.NORMAL
+                inputMode = BloodPressureInputMode.NORMAL,
+                editingBloodPressure = null
             )
         }
     }
 
-    fun updateInputSystolic(systolic: Int) {
+    fun updateInputSystolic(systolic: Int?) {
         _uiState.update { it.copy(inputSystolic = systolic) }
     }
 
-    fun updateInputDiastolic(diastolic: Int) {
+    fun updateInputDiastolic(diastolic: Int?) {
         _uiState.update { it.copy(inputDiastolic = diastolic) }
     }
 
@@ -170,20 +187,55 @@ class BloodPressureListViewModel @Inject constructor(
                 return@launch
             }
 
-            val bloodPressure = BloodPressure.newInstance(
-                dateTime = System.currentTimeMillis(),
-                systolic = state.inputSystolic,
-                diastolic = state.inputDiastolic
-            )
+            val shouldDelete = state.inputMode == BloodPressureInputMode.EDIT &&
+                state.inputSystolic == null &&
+                state.inputDiastolic == null
+
+            val systolic = state.inputSystolic
+            val diastolic = state.inputDiastolic
+            if (!shouldDelete && (systolic == null || diastolic == null)) {
+                _uiState.update { it.copy(message = "Systolic and diastolic are required.") }
+                return@launch
+            }
+
+            val editingBloodPressure = state.editingBloodPressure
+            if (state.inputMode == BloodPressureInputMode.EDIT && editingBloodPressure == null) {
+                _uiState.update { it.copy(message = "No blood pressure record is selected.") }
+                return@launch
+            }
 
             runCatching {
-                healthConnectManager.writeBloodPressure(bloodPressure)
+                when (state.inputMode) {
+                    BloodPressureInputMode.ADD -> {
+                        healthConnectManager.writeBloodPressure(
+                            BloodPressure.newInstance(
+                                dateTime = System.currentTimeMillis(),
+                                systolic = requireNotNull(systolic),
+                                diastolic = requireNotNull(diastolic)
+                            )
+                        )
+                    }
+                    BloodPressureInputMode.EDIT -> {
+                        if (shouldDelete) {
+                            healthConnectManager.deleteBloodPressure(requireNotNull(editingBloodPressure))
+                        } else {
+                            healthConnectManager.updateBloodPressure(
+                                requireNotNull(editingBloodPressure).copy(
+                                    systolic = requireNotNull(systolic),
+                                    diastolic = requireNotNull(diastolic)
+                                )
+                            )
+                        }
+                    }
+                    BloodPressureInputMode.NORMAL -> Unit
+                }
                 healthConnectManager.readLatestBloodPressuresPage(limit = PAGE_SIZE)
             }.onSuccess { page ->
                 _uiState.update {
                     it.copy(
                         bloodPressures = page.bloodPressures,
                         inputMode = BloodPressureInputMode.NORMAL,
+                        editingBloodPressure = null,
                         nextPageToken = page.nextPageToken,
                         canLoadMore = page.nextPageToken != null,
                         message = null
@@ -205,8 +257,9 @@ class BloodPressureListViewModel @Inject constructor(
 data class BloodPressureListUiState(
     val bloodPressures: List<BloodPressure> = emptyList(),
     val inputMode: BloodPressureInputMode = BloodPressureInputMode.NORMAL,
-    val inputSystolic: Int = 150,
-    val inputDiastolic: Int = 100,
+    val inputSystolic: Int? = 150,
+    val inputDiastolic: Int? = 100,
+    val editingBloodPressure: BloodPressure? = null,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val canLoadMore: Boolean = true,
