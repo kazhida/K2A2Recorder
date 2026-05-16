@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.abplus.k2a2recorder.model.BloodPressure
+import com.abplus.k2a2recorder.ui.components.BloodPressureInputMode
 import com.abplus.k2a2recorder.ui.components.BloodPressureListBox
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,7 +28,13 @@ fun BloodPressureListScreen(
     uiState: BloodPressureListUiState,
     modifier: Modifier = Modifier,
     onBloodPressureClick: (BloodPressure) -> Unit = {},
+    onRefresh: () -> Unit = {},
     onLoadMore: () -> Unit = {},
+    onInputSystolicChange: (Int) -> Unit = {},
+    onInputDiastolicChange: (Int) -> Unit = {},
+    onInputMicClick: () -> Unit = {},
+    onInputCancelClick: () -> Unit = {},
+    onInputSaveClick: () -> Unit = {},
     onAddClick: () -> Unit = {}
 ) {
     Scaffold(
@@ -50,7 +57,13 @@ fun BloodPressureListScreen(
             uiState = uiState,
             contentPadding = innerPadding,
             onBloodPressureClick = onBloodPressureClick,
-            onLoadMore = onLoadMore
+            onRefresh = onRefresh,
+            onLoadMore = onLoadMore,
+            onInputSystolicChange = onInputSystolicChange,
+            onInputDiastolicChange = onInputDiastolicChange,
+            onInputMicClick = onInputMicClick,
+            onInputCancelClick = onInputCancelClick,
+            onInputSaveClick = onInputSaveClick
         )
     }
 }
@@ -61,6 +74,12 @@ private fun BloodPressureListScreenBody(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     onBloodPressureClick: (BloodPressure) -> Unit = {},
+    onRefresh: () -> Unit = {},
+    onInputSystolicChange: (Int) -> Unit = {},
+    onInputDiastolicChange: (Int) -> Unit = {},
+    onInputMicClick: () -> Unit = {},
+    onInputCancelClick: () -> Unit = {},
+    onInputSaveClick: () -> Unit = {},
     onLoadMore: () -> Unit = {}
 ) {
     Column(
@@ -78,19 +97,29 @@ private fun BloodPressureListScreenBody(
             )
         }
 
-        if (uiState.isLoading) {
-            Text(
-                text = "Loading blood pressure records...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+//        if (uiState.isLoading) {
+//            Text(
+//                text = "Loading blood pressure records...",
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant
+//            )
+//        }
 
         BloodPressureListBox(
             bloodPressures = uiState.bloodPressures,
+            inputMode = uiState.inputMode,
+            inputSystolic = uiState.inputSystolic,
+            inputDiastolic = uiState.inputDiastolic,
+            isRefreshing = uiState.isLoading,
             isLoadingMore = uiState.isLoadingMore,
             modifier = Modifier.fillMaxSize(),
             onBloodPressureClick = onBloodPressureClick,
+            onRefresh = onRefresh,
+            onInputSystolicChange = onInputSystolicChange,
+            onInputDiastolicChange = onInputDiastolicChange,
+            onInputMicClick = onInputMicClick,
+            onInputCancelClick = onInputCancelClick,
+            onInputSaveClick = onInputSaveClick,
             onLoadMore = onLoadMore
         )
     }
@@ -102,6 +131,7 @@ private fun BloodPressureListScreenPreview() {
     MaterialTheme {
         BloodPressureListScreen(
             uiState = BloodPressureListUiState(
+                inputMode = BloodPressureInputMode.ADD,
                 bloodPressures = listOf(
                     BloodPressure.newInstance(1_717_200_000_000, 128, 82),
                     BloodPressure.newInstance(1_717_286_400_000, 121, 78),

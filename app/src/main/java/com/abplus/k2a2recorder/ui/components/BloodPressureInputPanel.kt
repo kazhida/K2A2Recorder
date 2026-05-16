@@ -1,9 +1,7 @@
 package com.abplus.k2a2recorder.ui.components
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,37 +10,54 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+
 
 @Composable
 fun BloodPressureInputPanel(
     systolic: Int,
     diastolic: Int,
+    inputMode: BloodPressureInputMode,
     modifier: Modifier = Modifier,
     systolicRange: IntRange = 70..250,
     diastolicRange: IntRange = 40..150,
     onSystolicChange: (Int) -> Unit = {},
-    onDiastolicChange: (Int) -> Unit = {}
+    onDiastolicChange: (Int) -> Unit = {},
+    onMicClick: () -> Unit = {},
+    onCancelClick: () -> Unit = {},
+    onSaveClick: () -> Unit = {}
 ) {
+    val saveButtonText = when (inputMode) {
+        BloodPressureInputMode.EDIT -> "更新"
+        BloodPressureInputMode.ADD,
+        BloodPressureInputMode.NORMAL -> "保存"
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth(),
@@ -51,47 +66,80 @@ fun BloodPressureInputPanel(
     ) {
         Column(
             modifier = Modifier,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             Spacer(modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .weight(1f)
+                .clickable(onClick = onCancelClick)
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0x00FFFFFF),
+                            Color(0x66FFFFFF),
+                            Color(0xAAFFFFFF),
+                            Color(0xDDFFFFFF),
                             Color(0xFFFFFFFF),
                         )
                     )
                 )
             )
-            Row(
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth().background(Color.White).weight(1f).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                BloodPressureDrumPicker(
-                    label = "SYS",
-                    value = systolic,
-                    values = systolicRange.toList(),
-                    modifier = Modifier.weight(1f),
-                    onValueChange = onSystolicChange
-                )
-                BloodPressureDrumPicker(
-                    label = "DIA",
-                    value = diastolic,
-                    values = diastolicRange.toList(),
-                    modifier = Modifier.weight(1f),
-                    onValueChange = onDiastolicChange
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BloodPressureTextField(
+                        label = "最高血圧",
+                        value = systolic,
+                        valueRange = systolicRange,
+                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                        onValueChange = onSystolicChange
+                    )
+                    Text("/", modifier = Modifier.align(Alignment.CenterVertically))
+                    BloodPressureTextField(
+                        label = "最低血圧",
+                        value = diastolic,
+                        valueRange = diastolicRange,
+                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                        onValueChange = onDiastolicChange
+                    )
+                    Text("mmHg", modifier = Modifier.align(Alignment.CenterVertically))
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onMicClick) {
+                        Icon(
+                            imageVector = Icons.Filled.Mic,
+                            contentDescription = "音声入力"
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = onCancelClick) {
+                        Text(text = "キャンセル")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(onClick = onSaveClick) {
+                        Text(text = saveButtonText)
+                    }
+                }
             }
             Box(modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .weight(1f)
+                .clickable(onClick = onCancelClick)
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             Color(0xFFFFFFFF),
-                            Color(0x00FFFFFF),
+                            Color(0xDDFFFFFF),
+                            Color(0xAAFFFFFF),
+                            Color(0x66FFFFFF),
                         )
                     )
                 )
@@ -100,108 +148,45 @@ fun BloodPressureInputPanel(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun BloodPressureDrumPicker(
+private fun BloodPressureTextField(
     label: String,
     value: Int,
-    values: List<Int>,
+    valueRange: IntRange,
     modifier: Modifier = Modifier,
     onValueChange: (Int) -> Unit = {}
 ) {
-    val selectedIndex = values.indexOf(value).coerceAtLeast(0)
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
-    val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+    var text by rememberSaveable(label) { mutableStateOf(value.toString()) }
 
-    LaunchedEffect(value, values) {
-        val nextIndex = values.indexOf(value)
-        if (nextIndex >= 0 && nextIndex != listState.firstVisibleItemIndex) {
-            listState.animateScrollToItem(nextIndex)
+    LaunchedEffect(value) {
+        if (text.toIntOrNull() != value) {
+            text = value.toString()
         }
     }
 
-    LaunchedEffect(listState, values) {
-        snapshotFlow { listState.centerVisibleIndex() }
-            .map { index -> values.getOrNull(index) }
-            .distinctUntilChanged()
-            .collect { selectedValue ->
-                if (selectedValue != null) {
-                    onValueChange(selectedValue)
-                }
+    val parsedValue = text.toIntOrNull()
+    val isError = parsedValue != null && parsedValue !in valueRange
+
+    OutlinedTextField(
+        value = text,
+        onValueChange = { nextText ->
+            val filteredText = nextText
+                .filter { it.isDigit() }
+                .take(valueRange.last.toString().length)
+            text = filteredText
+
+            val nextValue = filteredText.toIntOrNull()
+            if (nextValue != null && nextValue in valueRange) {
+                onValueChange(nextValue)
             }
-    }
-
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.surfaceContainerLow
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(168.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                LazyColumn(
-                    state = listState,
-                    flingBehavior = flingBehavior,
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    itemsIndexed(values) { index, pickerValue ->
-                        val isSelected = index == listState.centerVisibleIndex()
-
-                        Text(
-                            text = pickerValue.toString(),
-                            modifier = Modifier
-                                .height(56.dp)
-                                .alpha(if (isSelected) 1f else 0.45f)
-                                .padding(vertical = 10.dp),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                    content = {}
-                )
-            }
-        }
-
-        Text(
-            text = "mmHg",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-private fun LazyListState.centerVisibleIndex(): Int {
-    val visibleItems = layoutInfo.visibleItemsInfo
-    if (visibleItems.isEmpty()) return firstVisibleItemIndex
-
-    val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
-    return visibleItems.minBy { item ->
-        kotlin.math.abs((item.offset + item.size / 2) - viewportCenter)
-    }.index
+        },
+        label = { Text(text = label) },
+        modifier = modifier.width(120.dp),
+        textStyle = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.End),
+        singleLine = true,
+        isError = isError,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
 }
 
 @Preview(showBackground = true)
@@ -211,6 +196,7 @@ private fun BloodPressureInputPanelPreview() {
         BloodPressureInputPanel(
             systolic = 128,
             diastolic = 82,
+            inputMode = BloodPressureInputMode.ADD,
             modifier = Modifier.padding(16.dp)
         )
     }

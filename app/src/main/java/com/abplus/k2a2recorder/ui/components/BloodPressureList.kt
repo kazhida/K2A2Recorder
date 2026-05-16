@@ -1,16 +1,21 @@
 package com.abplus.k2a2recorder.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -28,15 +33,36 @@ import com.abplus.k2a2recorder.model.BloodPressure
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
+enum class BloodPressureInputMode {
+    NORMAL,
+    EDIT,
+    ADD
+}
+
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BloodPressureListBox(
     bloodPressures: List<BloodPressure>,
     modifier: Modifier = Modifier,
+    inputMode: BloodPressureInputMode = BloodPressureInputMode.NORMAL,
+    inputSystolic: Int = 150,
+    inputDiastolic: Int = 100,
+    isRefreshing: Boolean = false,
     isLoadingMore: Boolean = false,
     onBloodPressureClick: (BloodPressure) -> Unit = {},
+    onRefresh: () -> Unit = {},
+    onInputSystolicChange: (Int) -> Unit = {},
+    onInputDiastolicChange: (Int) -> Unit = {},
+    onInputMicClick: () -> Unit = {},
+    onInputCancelClick: () -> Unit = {},
+    onInputSaveClick: () -> Unit = {},
     onLoadMore: () -> Unit = {}
 ) {
     val listState = rememberLazyListState()
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = onRefresh
+    )
 
     LaunchedEffect(listState, bloodPressures.size) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
@@ -58,48 +84,67 @@ fun BloodPressureListBox(
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface
     ) {
-        if (bloodPressures.isEmpty()) {
-            Text(
-                text = "No blood pressure records",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(
-                    items = bloodPressures,
-                    key = { index, bloodPressure ->
-                        "${bloodPressure.id}-${bloodPressure.timeInMillis}-$index"
-                    }
-                ) { _, bloodPressure ->
-                    BloodPressureItem(
-                        bloodPressure = bloodPressure,
-                        onClick = { onBloodPressureClick(bloodPressure) }
-                    )
-                }
-
-                if (isLoadingMore) {
-                    item {
-                        Text(
-                            text = "Loading more blood pressure records...",
-                            modifier = Modifier.padding(8.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
+            if (bloodPressures.isEmpty()) {
+                Text(
+                    text = "No blood pressure records",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(
+                        items = bloodPressures,
+                        key = { index, bloodPressure ->
+                            "${bloodPressure.id}-${bloodPressure.timeInMillis}-$index"
+                        }
+                    ) { _, bloodPressure ->
+                        BloodPressureItem(
+                            bloodPressure = bloodPressure,
+                            onClick = { onBloodPressureClick(bloodPressure) }
                         )
+                    }
+
+                    if (isLoadingMore) {
+                        item {
+                            Text(
+                                text = "Loading more blood pressure records...",
+                                modifier = Modifier.padding(8.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
+            PullRefreshIndicator(
+                refreshing = isRefreshing,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
-        BloodPressureInputPanel(
-            systolic = 150,
-            diastolic = 100
-        )
+        if (inputMode != BloodPressureInputMode.NORMAL) {
+            BloodPressureInputPanel(
+                systolic = inputSystolic,
+                diastolic = inputDiastolic,
+                inputMode = inputMode,
+                onSystolicChange = onInputSystolicChange,
+                onDiastolicChange = onInputDiastolicChange,
+                onMicClick = onInputMicClick,
+                onCancelClick = onInputCancelClick,
+                onSaveClick = onInputSaveClick
+            )
+        }
     }
 }
 
@@ -122,7 +167,7 @@ fun BloodPressureItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 0.dp, vertical = 10.dp),
+                .padding(horizontal = 8.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

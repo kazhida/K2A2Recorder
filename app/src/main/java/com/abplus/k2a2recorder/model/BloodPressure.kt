@@ -5,7 +5,7 @@ import java.util.Calendar
 import java.util.Locale
 
 data class BloodPressure(
-    val id: Long,
+    val id: String,
     val timeInMillis: Long,
     val systolic: Int,
     val diastolic: Int
@@ -16,8 +16,9 @@ data class BloodPressure(
         fun newInstance(
             dateTime: Long,
             systolic: Int,
-            diastolic: Int
-        ): BloodPressure = BloodPressure(0, dateTime, systolic, diastolic)
+            diastolic: Int,
+            id: String = ""
+        ): BloodPressure = BloodPressure(id, dateTime, systolic, diastolic)
     }
 
     private val dateFormatter = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())

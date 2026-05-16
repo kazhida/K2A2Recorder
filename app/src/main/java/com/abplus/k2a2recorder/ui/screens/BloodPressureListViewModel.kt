@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.abplus.k2a2recorder.health.HealthConnectManager
 import com.abplus.k2a2recorder.model.BloodPressure
+import com.abplus.k2a2recorder.ui.components.BloodPressureInputMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -118,6 +119,109 @@ class BloodPressureListViewModel @Inject constructor(
         }
     }
 
+    fun onAddClick() {
+        _uiState.update {
+            it.copy(
+                inputMode = BloodPressureInputMode.ADD,
+                editingBloodPressure = null
+            )
+        }
+    }
+
+    fun showEditInput(bloodPressure: BloodPressure) {
+        _uiState.update {
+            it.copy(
+                inputMode = BloodPressureInputMode.EDIT,
+                inputSystolic = bloodPressure.systolic,
+                inputDiastolic = bloodPressure.diastolic,
+                editingBloodPressure = bloodPressure
+            )
+        }
+    }
+
+    fun hideInput() {
+        _uiState.update {
+            it.copy(
+                inputMode = BloodPressureInputMode.NORMAL,
+                editingBloodPressure = null
+            )
+        }
+    }
+
+    fun updateInputSystolic(systolic: Int) {
+        _uiState.update { it.copy(inputSystolic = systolic) }
+    }
+
+    fun updateInputDiastolic(diastolic: Int) {
+        _uiState.update { it.copy(inputDiastolic = diastolic) }
+    }
+
+    fun updateInputBloodPressure(systolic: Int, diastolic: Int) {
+        _uiState.update {
+            it.copy(
+                inputSystolic = systolic,
+                inputDiastolic = diastolic
+            )
+        }
+    }
+
+    fun saveInputBloodPressure() {
+        val state = _uiState.value
+
+        if (state.inputMode == BloodPressureInputMode.NORMAL) {
+            return
+        }
+
+        viewModelScope.launch {
+            if (!healthConnectManager.isAvailable) {
+                _uiState.update { it.copy(message = "Health Connect is not available.") }
+                return@launch
+            }
+
+            if (!healthConnectManager.hasBloodPressurePermissions()) {
+                _uiState.update { it.copy(message = "Blood pressure read/write permission is required.") }
+                return@launch
+            }
+
+            val bloodPressure = when (state.inputMode) {
+                BloodPressureInputMode.ADD -> BloodPressure.newInstance(
+                    dateTime = System.currentTimeMillis(),
+                    systolic = state.inputSystolic,
+                    diastolic = state.inputDiastolic
+                )
+                BloodPressureInputMode.EDIT -> state.editingBloodPressure?.copy(
+                    systolic = state.inputSystolic,
+                    diastolic = state.inputDiastolic
+                )
+                BloodPressureInputMode.NORMAL -> null
+            } ?: return@launch
+
+            runCatching {
+                when (state.inputMode) {
+                    BloodPressureInputMode.ADD -> healthConnectManager.writeBloodPressure(bloodPressure)
+                    BloodPressureInputMode.EDIT -> healthConnectManager.updateBloodPressure(bloodPressure)
+                    BloodPressureInputMode.NORMAL -> Unit
+                }
+                healthConnectManager.readLatestBloodPressuresPage(limit = PAGE_SIZE)
+            }.onSuccess { page ->
+                _uiState.update {
+                    it.copy(
+                        bloodPressures = page.bloodPressures,
+                        inputMode = BloodPressureInputMode.NORMAL,
+                        editingBloodPressure = null,
+                        nextPageToken = page.nextPageToken,
+                        canLoadMore = page.nextPageToken != null,
+                        message = null
+                    )
+                }
+            }.onFailure { throwable ->
+                _uiState.update {
+                    it.copy(message = throwable.message ?: "Failed to save blood pressure record.")
+                }
+            }
+        }
+    }
+
     companion object {
         private const val PAGE_SIZE = 50
     }
@@ -125,6 +229,10 @@ class BloodPressureListViewModel @Inject constructor(
 
 data class BloodPressureListUiState(
     val bloodPressures: List<BloodPressure> = emptyList(),
+    val inputMode: BloodPressureInputMode = BloodPressureInputMode.NORMAL,
+    val inputSystolic: Int = 150,
+    val inputDiastolic: Int = 100,
+    val editingBloodPressure: BloodPressure? = null,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val canLoadMore: Boolean = true,
