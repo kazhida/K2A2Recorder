@@ -54,10 +54,6 @@ class HealthConnectManager @Inject constructor(
         client.insertRecords(listOf(bloodPressure.toHealthConnectRecord()))
     }
 
-    suspend fun updateBloodPressure(bloodPressure: BloodPressure) {
-        client.updateRecords(listOf(bloodPressure.toHealthConnectRecord()))
-    }
-
     suspend fun readBloodPressures(startTime: Instant, endTime: Instant): List<BloodPressure> {
         val response = client.readRecords(
             ReadRecordsRequest(
@@ -100,11 +96,7 @@ class HealthConnectManager @Inject constructor(
         return BloodPressureRecord(
             time = instant,
             zoneOffset = zoneOffset,
-            metadata = if (id.isBlank()) {
-                Metadata.manualEntry()
-            } else {
-                Metadata.manualEntryWithId(id)
-            },
+            metadata = Metadata.manualEntry(),
             systolic = Pressure.millimetersOfMercury(systolic.toDouble()),
             diastolic = Pressure.millimetersOfMercury(diastolic.toDouble())
         )

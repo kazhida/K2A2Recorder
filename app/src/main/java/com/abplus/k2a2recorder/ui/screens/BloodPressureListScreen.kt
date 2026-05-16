@@ -27,7 +27,6 @@ import com.abplus.k2a2recorder.ui.components.BloodPressureListBox
 fun BloodPressureListScreen(
     uiState: BloodPressureListUiState,
     modifier: Modifier = Modifier,
-    onBloodPressureClick: (BloodPressure) -> Unit = {},
     onRefresh: () -> Unit = {},
     onLoadMore: () -> Unit = {},
     onInputSystolicChange: (Int) -> Unit = {},
@@ -56,7 +55,6 @@ fun BloodPressureListScreen(
         BloodPressureListScreenBody(
             uiState = uiState,
             contentPadding = innerPadding,
-            onBloodPressureClick = onBloodPressureClick,
             onRefresh = onRefresh,
             onLoadMore = onLoadMore,
             onInputSystolicChange = onInputSystolicChange,
@@ -73,7 +71,6 @@ private fun BloodPressureListScreenBody(
     uiState: BloodPressureListUiState,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
-    onBloodPressureClick: (BloodPressure) -> Unit = {},
     onRefresh: () -> Unit = {},
     onInputSystolicChange: (Int) -> Unit = {},
     onInputDiastolicChange: (Int) -> Unit = {},
@@ -113,7 +110,6 @@ private fun BloodPressureListScreenBody(
             isRefreshing = uiState.isLoading,
             isLoadingMore = uiState.isLoadingMore,
             modifier = Modifier.fillMaxSize(),
-            onBloodPressureClick = onBloodPressureClick,
             onRefresh = onRefresh,
             onInputSystolicChange = onInputSystolicChange,
             onInputDiastolicChange = onInputDiastolicChange,

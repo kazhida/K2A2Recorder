@@ -52,12 +52,6 @@ fun BloodPressureInputPanel(
     onCancelClick: () -> Unit = {},
     onSaveClick: () -> Unit = {}
 ) {
-    val saveButtonText = when (inputMode) {
-        BloodPressureInputMode.EDIT -> "更新"
-        BloodPressureInputMode.ADD,
-        BloodPressureInputMode.NORMAL -> "保存"
-    }
-
     Surface(
         modifier = modifier
             .fillMaxWidth(),
@@ -125,7 +119,7 @@ fun BloodPressureInputPanel(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = onSaveClick) {
-                        Text(text = saveButtonText)
+                        Text(text = "保存")
                     }
                 }
             }

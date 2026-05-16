@@ -71,7 +71,6 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 BloodPressureListScreen(
                     uiState = uiState,
-                    onBloodPressureClick = viewModel::showEditInput,
                     onRefresh = viewModel::loadLatestBloodPressures,
                     onLoadMore = viewModel::loadNextBloodPressures,
                     onInputSystolicChange = viewModel::updateInputSystolic,

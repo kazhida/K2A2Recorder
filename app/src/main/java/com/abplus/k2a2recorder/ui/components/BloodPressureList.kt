@@ -1,6 +1,5 @@
 package com.abplus.k2a2recorder.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +34,6 @@ import kotlinx.coroutines.flow.map
 
 enum class BloodPressureInputMode {
     NORMAL,
-    EDIT,
     ADD
 }
 
@@ -49,7 +47,6 @@ fun BloodPressureListBox(
     inputDiastolic: Int = 100,
     isRefreshing: Boolean = false,
     isLoadingMore: Boolean = false,
-    onBloodPressureClick: (BloodPressure) -> Unit = {},
     onRefresh: () -> Unit = {},
     onInputSystolicChange: (Int) -> Unit = {},
     onInputDiastolicChange: (Int) -> Unit = {},
@@ -110,8 +107,7 @@ fun BloodPressureListBox(
                         }
                     ) { _, bloodPressure ->
                         BloodPressureItem(
-                            bloodPressure = bloodPressure,
-                            onClick = { onBloodPressureClick(bloodPressure) }
+                            bloodPressure = bloodPressure
                         )
                     }
 
@@ -151,13 +147,10 @@ fun BloodPressureListBox(
 @Composable
 fun BloodPressureItem(
     bloodPressure: BloodPressure,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
