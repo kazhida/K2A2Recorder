@@ -43,7 +43,7 @@ fun BloodPressureListScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "血圧記録") },
+                title = { Text(text = "K2A2") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.error,
                     titleContentColor = MaterialTheme.colorScheme.onError
