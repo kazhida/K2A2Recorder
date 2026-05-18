@@ -110,6 +110,7 @@ private fun BloodPressureListScreenBody(
             inputMode = uiState.inputMode,
             inputSystolic = uiState.inputSystolic,
             inputDiastolic = uiState.inputDiastolic,
+            inputDateTimeInMillis = uiState.inputDateTimeInMillis,
             isRefreshing = uiState.isLoading,
             isLoadingMore = uiState.isLoadingMore,
             modifier = Modifier.fillMaxSize(),

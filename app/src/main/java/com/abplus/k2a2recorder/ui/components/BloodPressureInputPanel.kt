@@ -36,12 +36,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.abplus.k2a2recorder.model.BloodPressure
 
 
 @Composable
 fun BloodPressureInputPanel(
     systolic: Int?,
     diastolic: Int?,
+    dateTimeInMillis: Long,
     inputMode: BloodPressureInputMode,
     modifier: Modifier = Modifier,
     systolicRange: IntRange = 70..250,
@@ -57,6 +59,7 @@ fun BloodPressureInputPanel(
         BloodPressureInputMode.ADD,
         BloodPressureInputMode.NORMAL -> "保存"
     }
+    val bloodPressureDateTime = BloodPressure.newInstance(dateTimeInMillis, 0, 0)
 
     Surface(
         modifier = modifier
@@ -87,6 +90,13 @@ fun BloodPressureInputPanel(
                 modifier = Modifier.fillMaxWidth().background(Color.White).weight(1f).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
+                Text(
+                    text = "${bloodPressureDateTime.date} ${bloodPressureDateTime.time}",
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -198,6 +208,7 @@ private fun BloodPressureInputPanelPreview() {
         BloodPressureInputPanel(
             systolic = 128,
             diastolic = 82,
+            dateTimeInMillis = 1_717_200_000_000,
             inputMode = BloodPressureInputMode.ADD,
             modifier = Modifier.padding(16.dp)
         )

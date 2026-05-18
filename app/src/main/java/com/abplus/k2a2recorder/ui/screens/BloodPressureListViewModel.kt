@@ -123,7 +123,8 @@ class BloodPressureListViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 inputMode = BloodPressureInputMode.ADD,
-                editingBloodPressure = null
+                editingBloodPressure = null,
+                inputDateTimeInMillis = System.currentTimeMillis()
             )
         }
     }
@@ -137,6 +138,7 @@ class BloodPressureListViewModel @Inject constructor(
                     inputMode = BloodPressureInputMode.EDIT,
                     inputSystolic = bloodPressure.systolic,
                     inputDiastolic = bloodPressure.diastolic,
+                    inputDateTimeInMillis = bloodPressure.timeInMillis,
                     editingBloodPressure = bloodPressure
                 )
             }
@@ -209,7 +211,7 @@ class BloodPressureListViewModel @Inject constructor(
                     BloodPressureInputMode.ADD -> {
                         healthConnectManager.writeBloodPressure(
                             BloodPressure.newInstance(
-                                dateTime = System.currentTimeMillis(),
+                                dateTime = state.inputDateTimeInMillis,
                                 systolic = requireNotNull(systolic),
                                 diastolic = requireNotNull(diastolic)
                             )
@@ -259,6 +261,7 @@ data class BloodPressureListUiState(
     val inputMode: BloodPressureInputMode = BloodPressureInputMode.NORMAL,
     val inputSystolic: Int? = 150,
     val inputDiastolic: Int? = 100,
+    val inputDateTimeInMillis: Long = System.currentTimeMillis(),
     val editingBloodPressure: BloodPressure? = null,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,

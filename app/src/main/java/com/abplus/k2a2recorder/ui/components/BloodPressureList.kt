@@ -54,6 +54,7 @@ fun BloodPressureList(
     inputMode: BloodPressureInputMode = BloodPressureInputMode.NORMAL,
     inputSystolic: Int? = 150,
     inputDiastolic: Int? = 100,
+    inputDateTimeInMillis: Long = System.currentTimeMillis(),
     isRefreshing: Boolean = false,
     isLoadingMore: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -146,6 +147,7 @@ fun BloodPressureList(
             BloodPressureInputPanel(
                 systolic = inputSystolic,
                 diastolic = inputDiastolic,
+                dateTimeInMillis = inputDateTimeInMillis,
                 inputMode = inputMode,
                 onSystolicChange = onInputSystolicChange,
                 onDiastolicChange = onInputDiastolicChange,
